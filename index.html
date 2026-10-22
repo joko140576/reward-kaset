@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Redeem Point - Perbaikan Kaset CRM</title>
+<style>
+  :root{--bg:#f3f7ff;--card:rgba(255,255,255,.78);--ink:#14203d;--mute:#5a6a8c;--pri:#2563eb;--cy:#0891b2;--vi:#7c3aed;--ok:#059669;--line:rgba(37,99,235,.18);color-scheme:light}
+  *{box-sizing:border-box}
+  html{background:var(--bg)}
+  body{margin:0;font-family:"Segoe UI",system-ui,Roboto,sans-serif;color:var(--ink);min-height:100vh;
+    background:radial-gradient(1100px 600px at 10% -10%,rgba(37,99,235,.18),transparent 60%),
+               radial-gradient(900px 600px at 100% 5%,rgba(124,58,237,.14),transparent 60%),
+               radial-gradient(900px 700px at 50% 120%,rgba(8,145,178,.14),transparent 60%),var(--bg)}
+  #bg-grid{position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:linear-gradient(rgba(37,99,235,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.08) 1px,transparent 1px);
+    background-size:48px 48px;
+    -webkit-mask-image:radial-gradient(ellipse at 50% 30%,#000 30%,transparent 80%);mask-image:radial-gradient(ellipse at 50% 30%,#000 30%,transparent 80%);
+    animation:gridmove 14s linear infinite}
+  #bg-circuit{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.5;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 260 260' fill='none' stroke='%232563eb' stroke-opacity='.25' stroke-width='1.2'%3E%3Cpath d='M0 40h60l20 20h60M80 60v60l20 20h80M180 140v60l20 20h60M30 260v-70l20-20h50M140 0v50l20 20h100M220 70v40'/%3E%3Ccircle cx='60' cy='40' r='3' fill='%232563eb'/%3E%3Ccircle cx='140' cy='60' r='3' fill='%232563eb'/%3E%3Ccircle cx='180' cy='140' r='3' fill='%232563eb'/%3E%3Ccircle cx='100' cy='170' r='3' fill='%232563eb'/%3E%3Ccircle cx='220' cy='110' r='3' fill='%232563eb'/%3E%3Crect x='170' y='20' width='14' height='14' rx='2'/%3E%3Crect x='20' y='150' width='14' height='14' rx='2'/%3E%3C/svg%3E");
+    -webkit-mask-image:linear-gradient(180deg,#000,transparent 85%);mask-image:linear-gradient(180deg,#000,transparent 85%)}
+  #bg-scan{position:fixed;left:0;right:0;height:140px;top:-140px;z-index:0;pointer-events:none;
+    background:linear-gradient(180deg,transparent,rgba(37,99,235,.07),transparent);animation:scan 9s linear infinite}
+  #bg-net{position:fixed;inset:0;z-index:0;pointer-events:none}
+  nav,main{position:relative;z-index:2}
+  @keyframes gridmove{to{background-position:48px 48px}}
+  @keyframes scan{to{top:100%}}
+
+  nav{background:rgba(255,255,255,.8);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:8px;padding:0 22px;height:60px;box-shadow:0 4px 20px rgba(37,99,235,.08)}
+  nav .brand{font-weight:800;margin-right:auto;letter-spacing:.06em;text-transform:uppercase;font-size:15px;
+    background:linear-gradient(90deg,var(--cy),var(--pri),var(--vi));-webkit-background-clip:text;background-clip:text;color:transparent}
+  nav .brand::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--cy);box-shadow:0 0 10px var(--cy);margin-right:10px;vertical-align:middle;animation:pulse 2s infinite}
+  @keyframes pulse{50%{opacity:.35;transform:scale(.8)}}
+  nav a{padding:8px 16px;border-radius:10px;color:var(--mute);text-decoration:none;cursor:pointer;font-weight:600;font-size:14px;transition:.2s}
+  nav a:hover{color:var(--pri);background:rgba(37,99,235,.08)}
+  nav a.active{color:#fff;background:linear-gradient(135deg,var(--pri),var(--vi));box-shadow:0 6px 16px rgba(37,99,235,.35)}
+
+  main{max-width:980px;margin:0 auto;padding:28px 16px 60px}
+  .hero{position:relative;overflow:hidden;border-radius:22px;padding:48px 34px;color:#fff;
+    background:linear-gradient(135deg,#2563eb,#6d4aed 60%,#0891b2);
+    box-shadow:0 20px 50px rgba(37,99,235,.3),inset 0 1px 0 rgba(255,255,255,.25)}
+  .hero::after{content:"";position:absolute;right:-60px;top:-60px;width:260px;height:260px;border-radius:50%;
+    border:1px solid rgba(255,255,255,.4);box-shadow:0 0 0 30px rgba(255,255,255,.07),0 0 0 70px rgba(255,255,255,.04)}
+  .hero .tag{display:inline-block;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#fff;border:1px solid rgba(255,255,255,.55);padding:5px 12px;border-radius:99px;margin-bottom:14px}
+  .hero h1{margin:0 0 10px;font-size:34px;line-height:1.2;position:relative;z-index:1}
+  .hero p{margin:0;color:rgba(255,255,255,.92);max-width:560px;position:relative;z-index:1}
+
+  .card{background:var(--card);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:18px;padding:26px;margin-top:22px;
+    box-shadow:0 12px 34px rgba(37,99,235,.10),inset 0 1px 0 rgba(255,255,255,.9);position:relative}
+  .card::before{content:"";position:absolute;left:18px;right:18px;top:0;height:2px;background:linear-gradient(90deg,transparent,var(--cy),var(--pri),transparent);opacity:.8}
+  .card h2{margin-top:0;font-size:20px}
+  .card p,.card li{color:var(--mute);line-height:1.7}
+  .card b{color:var(--ink)}
+
+  .btn{background:linear-gradient(135deg,var(--pri),var(--vi));color:#fff;border:0;border-radius:12px;padding:12px 24px;font-size:15px;font-weight:700;cursor:pointer;
+    box-shadow:0 8px 20px rgba(37,99,235,.3);transition:.2s;letter-spacing:.02em}
+  .btn:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(37,99,235,.45)}
+  .btn:disabled{opacity:.6;cursor:wait;transform:none}
+  .btn.sec{background:#fff;color:var(--pri);border:1px solid rgba(37,99,235,.45);box-shadow:none}
+  .btn.sec:hover{background:rgba(37,99,235,.06)}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .full{grid-column:1/-1}
+  label{display:block;font-size:12px;font-weight:700;margin-bottom:7px;color:var(--cy);text-transform:uppercase;letter-spacing:.08em}
+  input,select{width:100%;padding:12px 14px;border:1px solid #cfd9ee;border-radius:10px;font-size:15px;background:#fff;color:var(--ink);transition:.2s}
+  input::placeholder{color:#9aa8c6}
+  input:focus,select:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+  .view{display:none} .view.active{display:block;animation:fade .35s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  .table-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--line);background:#fff}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{padding:12px 14px;text-align:left;border-bottom:1px solid #e6ecf8;white-space:nowrap}
+  th{background:#eaf1ff;font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--pri)}
+  tbody tr:hover{background:#f4f8ff}
+  .badge{background:#dcfaee;color:var(--ok);border:1px solid #9be8c8;padding:3px 11px;border-radius:99px;font-weight:700;font-size:12px}
+  .total{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+  .total b{font-size:26px;color:var(--ok)}
+
+  .modal-bg{position:fixed;inset:0;background:rgba(20,32,61,.45);backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;z-index:20;padding:16px}
+  .modal-bg.show{display:flex}
+  .modal{background:#fff;border:1px solid var(--line);border-radius:22px;padding:34px;max-width:390px;width:100%;text-align:center;
+    box-shadow:0 30px 80px rgba(37,99,235,.3);animation:pop .3s ease}
+  .modal .icon{font-size:58px}
+  .modal h3{margin:8px 0;font-size:24px}
+  .modal p{color:var(--mute)}
+  .modal .pts{font-size:50px;font-weight:800;color:var(--ok)}
+  .msg{margin-top:16px;padding:11px 15px;border-radius:10px;display:none;font-size:14px}
+  .msg.err{display:block;background:#ffecee;border:1px solid #ffb8c0;color:#c0283c}
+  .msg.info{display:block;background:#eaf1ff;border:1px solid #bcd0fb;color:#1d4ed8}
+  @keyframes pop{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+  @media(max-width:600px){.grid{grid-template-columns:1fr}.hero{padding:34px 22px}.hero h1{font-size:24px}}
+  @media(prefers-reduced-motion:reduce){#bg-grid,#bg-scan,nav .brand::before{animation:none}}
+</style>
+
+
+</head>
+<body>
+<div id="bg-grid"></div><div id="bg-circuit"></div><div id="bg-scan"></div><canvas id="bg-net"></canvas>
+<nav>
+  <span class="brand">Redeem Point CRM</span>
+  <a id="nav-home" class="active" onclick="show('home')">Beranda</a>
+  <a id="nav-point" onclick="show('point')">Point</a>
+</nav>
+
+<main>
+  <!-- HALAMAN UTAMA -->
+  <section id="view-home" class="view active">
+    <div class="hero">
+      <span class="tag">// Technician Reward System</span>
+      <h1>Redeem Point Perbaikan Kaset CRM</h1>
+      <p>Program apresiasi bagi teknisi atas perbaikan kaset mesin CRM yang berhasil diselesaikan.</p>
+    </div>
+
+    <div class="card" id="sec-def">
+      <h2>Tema &amp; Definisi</h2>
+      <p><b>Redeem Point</b> adalah program pemberian poin kepada teknisi yang menyelesaikan perbaikan kaset CRM (Cash Recycling Machine). Setiap perbaikan dengan status <b>OK</b> mendapat <b>10 point</b>.</p>
+      <ul>
+        <li><b>OK</b> : kaset selesai diperbaiki dan berfungsi normal (+10 point).</li>
+        <li><b>Pending Part</b> : perbaikan tertunda karena menunggu sparepart (0 point).</li>
+        <li><b>Unrepair</b> : kaset tidak dapat diperbaiki (0 point).</li>
+      </ul>
+      <button class="btn" onclick="show('form')">Isi Form Redeem Point</button>
+    </div>
+  </section>
+
+  <!-- FORM -->
+  <section id="view-form" class="view">
+    <div class="card">
+      <h2>Form Redeem Point</h2>
+      <div class="grid">
+        <div><label>Nama</label><input id="nama" placeholder="Nama lengkap"></div>
+        <div><label>NPP</label><input id="npp" placeholder="Nomor pegawai"></div>
+        <div><label>Region</label>
+          <select id="region"><option value="">-- Pilih --</option></select></div>
+        <div><label>TWU</label><input id="twu" placeholder="Kode / nama TWU"></div>
+        <div class="full"><label>Jenis Kaset</label>
+          <select id="kaset"><option value="">-- Pilih --</option></select></div>
+        <div><label>Tanggal Perbaikan</label><input type="date" id="tglPerbaikan"></div>
+        <div><label>Tanggal Selesai</label><input type="date" id="tglSelesai"></div>
+        <div class="full"><label>Status</label>
+          <select id="status"><option value="">-- Pilih --</option></select></div>
+      </div>
+      <div id="msg" class="msg"></div>
+      <p style="margin-top:18px">
+        <button class="btn" id="btnSubmit" onclick="submitForm()">Kirim</button>
+        <button class="btn sec" onclick="show('home')">Kembali</button>
+      </p>
+    </div>
+  </section>
+
+  <!-- POINT -->
+  <section id="view-point" class="view">
+    <div class="card">
+      <div class="total">
+        <h2 style="margin:0">Daftar Point (Status OK)</h2>
+        <div>Total: <b id="totalPoint">0</b> point</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>No</th><th>Nama</th><th>NPP</th><th>Region</th><th>TWU</th><th>Status</th><th>Point</th></tr></thead>
+          <tbody id="tbody"><tr><td colspan="7">Memuat...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- MODAL POINT -->
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <div class="icon">🎉</div>
+    <h3>Selamat!</h3>
+    <p>Anda mendapat</p>
+    <div class="pts">10 Point</div>
+    <p>Data perbaikan berhasil disimpan.</p>
+    <button class="btn" onclick="closeModal()">Tutup</button>
+  </div>
+</div>
+
+<script>
+  // GANTI dengan URL Web App Anda (berakhiran /exec)
+  var URL_EXEC = 'https://script.google.com/macros/s/AKfycbwy9D21kNO6vrNoBJzcN4-L4pjId-IXvNy14HqjYQtLj-VbqLCCL5naQmKP2Lhu2jke/exec';
+
+  var KASET = ['Hitachi SR7500','Hitachi VS 7500','RG-7','RG-8','Hyosung MX8600','Hyosung MX8600-S','DN'];
+  var STATUS = ['OK','Pending Part','Unrepair'];
+
+  function $(id){return document.getElementById(id);}
+  function esc(s){var d=document.createElement('div');d.textContent=s==null?'':s;return d.innerHTML;}
+
+  (function init(){
+    for(var i=1;i<=10;i++) $('region').add(new Option('Region '+i, i));
+    KASET.forEach(function(k){$('kaset').add(new Option(k,k));});
+    STATUS.forEach(function(s){$('status').add(new Option(s,s));});
+  })();
+
+  function show(v){
+    ['home','form','point'].forEach(function(x){ $('view-'+x).classList.toggle('active', x===v); });
+    $('nav-home').classList.toggle('active', v==='home'||v==='form');
+    $('nav-point').classList.toggle('active', v==='point');
+    if(v==='point') loadPoints();
+    window.scrollTo(0,0);
+  }
+
+  function setMsg(t,type){var m=$('msg');m.textContent=t||'';m.className='msg'+(t?' '+type:'');}
+
+  function submitForm(){
+    var d={
+      nama:$('nama').value.trim(), npp:$('npp').value.trim(), region:$('region').value,
+      twu:$('twu').value.trim(), kaset:$('kaset').value, tglPerbaikan:$('tglPerbaikan').value,
+      tglSelesai:$('tglSelesai').value, status:$('status').value
+    };
+    for(var k in d){ if(!d[k]) return setMsg('Semua field wajib diisi.','err'); }
+    if(d.tglSelesai < d.tglPerbaikan) return setMsg('Tanggal selesai tidak boleh sebelum tanggal perbaikan.','err');
+
+    if(URL_EXEC.indexOf('GANTI_DENGAN')>-1) return setMsg('URL_EXEC belum diisi di index.html.','err');
+    $('btnSubmit').disabled=true; setMsg('Menyimpan data...','info');
+    // text/plain = "simple request" -> tidak memicu preflight CORS
+    fetch(URL_EXEC,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(d)})
+      .then(function(r){return r.json();})
+      .then(function(res){
+        $('btnSubmit').disabled=false;
+        if(!res.ok) return setMsg(res.error||'Gagal menyimpan data.','err');
+        setMsg(''); resetForm();
+        if(res.point>0){ $('modal').classList.add('show'); }
+        else { setMsg('Data tersimpan. Status bukan OK, sehingga belum mendapat point.','info'); }
+      })
+      .catch(function(e){ $('btnSubmit').disabled=false; setMsg('Gagal terhubung ke server: '+e.message,'err'); });
+  }
+
+  function resetForm(){
+    ['nama','npp','twu','tglPerbaikan','tglSelesai'].forEach(function(i){$(i).value='';});
+    ['region','kaset','status'].forEach(function(i){$(i).value='';});
+  }
+
+  function closeModal(){ $('modal').classList.remove('show'); show('home'); }
+
+  function loadPoints(){
+    $('tbody').innerHTML='<tr><td colspan="7">Memuat...</td></tr>';
+    if(URL_EXEC.indexOf('GANTI_DENGAN')>-1){ $('tbody').innerHTML='<tr><td colspan="7">URL_EXEC belum diisi di index.html.</td></tr>'; return; }
+    fetch(URL_EXEC+'?action=points&t='+Date.now())
+      .then(function(r){return r.json();})
+      .then(function(res){
+        if(!res.ok) throw new Error(res.error);
+        var rows=res.data;
+        if(!rows.length){ $('tbody').innerHTML='<tr><td colspan="7">Belum ada data dengan status OK.</td></tr>'; $('totalPoint').textContent='0'; return; }
+        var total=0, h='';
+        rows.forEach(function(r,i){
+          total+=Number(r.point)||0;
+          h+='<tr><td>'+(i+1)+'</td><td>'+esc(r.nama)+'</td><td>'+esc(r.npp)+'</td><td>'+esc(r.region)+
+             '</td><td>'+esc(r.twu)+'</td><td><span class="badge">'+esc(r.status)+'</span></td><td><b>'+esc(r.point)+'</b></td></tr>';
+        });
+        $('tbody').innerHTML=h; $('totalPoint').textContent=total;
+      })
+      .catch(function(e){ $('tbody').innerHTML='<tr><td colspan="7">Gagal memuat: '+esc(e.message)+'</td></tr>'; });
+  }
+
+  /* jaringan partikel high-tech */
+  (function(){
+    var c=document.getElementById('bg-net'),x=c.getContext('2d'),P=[],W,H;
+    function size(){W=c.width=innerWidth;H=c.height=innerHeight;}
+    size();addEventListener('resize',size);
+    var n=Math.min(70,Math.floor(innerWidth/18));
+    for(var i=0;i<n;i++)P.push({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.35,vy:(Math.random()-.5)*.35});
+    if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+    function draw(){
+      x.clearRect(0,0,W,H);
+      for(var i=0;i<P.length;i++){
+        var a=P[i];a.x+=a.vx;a.y+=a.vy;
+        if(a.x<0||a.x>W)a.vx*=-1;if(a.y<0||a.y>H)a.vy*=-1;
+        x.fillStyle='rgba(37,99,235,.55)';x.beginPath();x.arc(a.x,a.y,1.6,0,6.3);x.fill();
+        for(var j=i+1;j<P.length;j++){
+          var b=P[j],dx=a.x-b.x,dy=a.y-b.y,d=Math.sqrt(dx*dx+dy*dy);
+          if(d<140){x.strokeStyle='rgba(37,99,235,'+(0.2*(1-d/140))+')';x.beginPath();x.moveTo(a.x,a.y);x.lineTo(b.x,b.y);x.stroke();}
+        }
+      }
+      requestAnimationFrame(draw);
+    }
+    draw();
+  })();
+</script>
+</body>
+</html>
