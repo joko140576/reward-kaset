@@ -78,6 +78,7 @@ function saveData(d) {
       new Date(), nama, npp, region, twu, d.kaset,
       d.tglPerbaikan, d.tglSelesai, d.status, point
     ]]);
+    CacheService.getScriptCache().remove('points'); // data baru -> cache dihapus
     return { ok: true, point: point };
   } finally {
     lock.releaseLock();
@@ -85,13 +86,22 @@ function saveData(d) {
 }
 
 function getPoints() {
+  const cache = CacheService.getScriptCache();
+  const hit = cache.get('points');
+  if (hit) return JSON.parse(hit);           // cepat: dari cache
+
   const sh = getSheet_();
   const last = sh.getLastRow();
-  if (last < 2) return [];
-  const rows = sh.getRange(2, 1, last - 1, HEADERS.length).getValues();
-  return rows
-    .filter(function (r) { return r[8] === 'OK'; })
-    .map(function (r) {
-      return { nama: r[1], npp: String(r[2]), region: r[3], twu: r[4], status: r[8], point: r[9] };
-    });
+  let out = [];
+  if (last >= 2) {
+    // baca hanya kolom B..J (bukan seluruh sheet)
+    const rows = sh.getRange(2, 2, last - 1, 9).getValues();
+    out = rows
+      .filter(function (r) { return r[7] === 'OK'; })
+      .map(function (r) {
+        return { nama: r[0], npp: String(r[1]), region: r[2], twu: r[3], status: r[7], point: r[8] };
+      });
+  }
+  try { cache.put('points', JSON.stringify(out), 300); } catch (e) {}
+  return out;
 }
