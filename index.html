@@ -155,7 +155,7 @@
     <div class="card">
       <div class="total">
         <h2 style="margin:0">Daftar Point (Status OK)</h2>
-        <div>Total: <b id="totalPoint">0</b> point</div>
+        <div><small id="syncInfo" style="color:var(--mute);margin-right:10px"></small>Total: <b id="totalPoint">0</b> point</div>
       </div>
       <div class="table-wrap">
         <table>
@@ -181,7 +181,7 @@
 
 <script>
   // GANTI dengan URL Web App Anda (berakhiran /exec)
-  var URL_EXEC = 'https://script.google.com/macros/s/AKfycbwy9D21kNO6vrNoBJzcN4-L4pjId-IXvNy14HqjYQtLj-VbqLCCL5naQmKP2Lhu2jke/exec';
+  var URL_EXEC = 'https://script.google.com/macros/s/AKfycbwguC0O7ZhO8bQx9Wo_4H6Dx22BQa0DZYL1chwYSYhrQdmNwn_M8li6l1XcXk2Rt3oR/exec';
 
   var KASET = ['Hitachi SR7500','Hitachi VS 7500','RG-7','RG-8','Hyosung MX8600','Hyosung MX8600-S','DN'];
   var STATUS = ['OK','Pending Part','Unrepair'];
@@ -222,7 +222,7 @@
       .then(function(res){
         $('btnSubmit').disabled=false;
         if(!res.ok) return setMsg(res.error||'Gagal menyimpan data.','err');
-        setMsg(''); resetForm();
+        setMsg(''); resetForm(); try{localStorage.removeItem(CK);}catch(e){} fetchPoints().catch(function(){});
         if(res.point>0){ $('modal').classList.add('show'); }
         else { setMsg('Data tersimpan. Status bukan OK, sehingga belum mendapat point.','info'); }
       })
@@ -236,25 +236,50 @@
 
   function closeModal(){ $('modal').classList.remove('show'); show('home'); }
 
-  function loadPoints(){
-    $('tbody').innerHTML='<tr><td colspan="7">Memuat...</td></tr>';
-    if(URL_EXEC.indexOf('GANTI_DENGAN')>-1){ $('tbody').innerHTML='<tr><td colspan="7">URL_EXEC belum diisi di index.html.</td></tr>'; return; }
-    fetch(URL_EXEC+'?action=points&t='+Date.now())
+  var CK='rp_points_v1', inflight=null;
+
+  function renderPoints(rows){
+    if(!rows.length){ $('tbody').innerHTML='<tr><td colspan="7">Belum ada data dengan status OK.</td></tr>'; $('totalPoint').textContent='0'; return; }
+    var total=0, h='';
+    rows.forEach(function(r,i){
+      total+=Number(r.point)||0;
+      h+='<tr><td>'+(i+1)+'</td><td>'+esc(r.nama)+'</td><td>'+esc(r.npp)+'</td><td>'+esc(r.region)+
+         '</td><td>'+esc(r.twu)+'</td><td><span class="badge">'+esc(r.status)+'</span></td><td><b>'+esc(r.point)+'</b></td></tr>';
+    });
+    $('tbody').innerHTML=h; $('totalPoint').textContent=total;
+  }
+
+  function readCache(){ try{ return JSON.parse(localStorage.getItem(CK)); }catch(e){ return null; } }
+
+  // ambil data dari server (1 request saja walau dipanggil berkali-kali)
+  function fetchPoints(){
+    if(inflight) return inflight;
+    inflight=fetch(URL_EXEC+'?action=points')
       .then(function(r){return r.json();})
       .then(function(res){
         if(!res.ok) throw new Error(res.error);
-        var rows=res.data;
-        if(!rows.length){ $('tbody').innerHTML='<tr><td colspan="7">Belum ada data dengan status OK.</td></tr>'; $('totalPoint').textContent='0'; return; }
-        var total=0, h='';
-        rows.forEach(function(r,i){
-          total+=Number(r.point)||0;
-          h+='<tr><td>'+(i+1)+'</td><td>'+esc(r.nama)+'</td><td>'+esc(r.npp)+'</td><td>'+esc(r.region)+
-             '</td><td>'+esc(r.twu)+'</td><td><span class="badge">'+esc(r.status)+'</span></td><td><b>'+esc(r.point)+'</b></td></tr>';
-        });
-        $('tbody').innerHTML=h; $('totalPoint').textContent=total;
+        try{ localStorage.setItem(CK,JSON.stringify(res.data)); }catch(e){}
+        return res.data;
       })
-      .catch(function(e){ $('tbody').innerHTML='<tr><td colspan="7">Gagal memuat: '+esc(e.message)+'</td></tr>'; });
+      .finally(function(){ inflight=null; });
+    return inflight;
   }
+
+  function loadPoints(){
+    if(URL_EXEC.indexOf('GANTI_DENGAN')>-1){ $('tbody').innerHTML='<tr><td colspan="7">URL_EXEC belum diisi di index.html.</td></tr>'; return; }
+    var cached=readCache();
+    if(cached){ renderPoints(cached); $('syncInfo').textContent='memperbarui...'; }   // tampil instan
+    else $('tbody').innerHTML='<tr><td colspan="7">Memuat...</td></tr>';
+    fetchPoints()
+      .then(function(rows){ renderPoints(rows); $('syncInfo').textContent='terbaru'; })
+      .catch(function(e){
+        if(cached){ $('syncInfo').textContent='offline (data tersimpan)'; }
+        else $('tbody').innerHTML='<tr><td colspan="7">Gagal memuat: '+esc(e.message)+'</td></tr>';
+      });
+  }
+
+  // prefetch di latar belakang saat halaman dibuka, agar tabel Point siap
+  if(URL_EXEC.indexOf('GANTI_DENGAN')<0) fetchPoints().catch(function(){});
 
   /* jaringan partikel high-tech */
   (function(){
