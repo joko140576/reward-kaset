@@ -5,11 +5,18 @@
 const SHEET_NAME = 'Redeem';
 const SPREADSHEET_ID = ''; // kosongkan jika script dibuat dari Extensions > Apps Script di dalam spreadsheet
 const HEADERS = ['Timestamp', 'Nama', 'NPP', 'Region', 'TWU', 'Jenis Kaset',
-                 'Tanggal Perbaikan', 'Tanggal Selesai', 'Status', 'Point'];
+                 'Tanggal Perbaikan', 'Tanggal Selesai', 'Status', 'Point',
+                 'Kondisi Awal', 'Part Diganti', 'Pengujian Checker', 'Pengujian Mesin', 'Foto'];
 const POINT_OK = 10;
 const KASET = ['Hitachi SR7500', 'Hitachi VS 7500', 'RG-7', 'RG-8',
                'Hyosung MX8600', 'Hyosung MX8600-S', 'DN'];
 const STATUS = ['OK', 'Pending Part', 'Unrepair'];
+const KONDISI = ['Indikasi human error', 'Part rusak', 'Mekanik problem', 'Lain-lain'];
+const PART = ['Handle', 'Casing', 'Unit kunci', 'Spacer unit', 'Motor unit', 'Sensor',
+              'Belt', 'Board', 'Mekanik lainnya', 'Tidak ada part diganti'];
+const HASIL = ['Berhasil', 'Belum berhasil'];
+const MAX_FOTO = 2 * 1024 * 1024;
+const FOLDER_ID = '1fPYE6aeoc7RRzXRKu9MMgGuHDrn0Tvop'; // folder Drive tujuan foto
 
 // ===== API JSON (dipanggil dari index.html lewat URL /exec) =====
 function json_(obj) {
@@ -44,12 +51,32 @@ function getSheet_() {
     : SpreadsheetApp.getActiveSpreadsheet();
   let sh = ss.getSheetByName(SHEET_NAME);
   if (!sh) sh = ss.insertSheet(SHEET_NAME);
-  if (sh.getLastRow() === 0) {
-    sh.appendRow(HEADERS);
-    sh.getRange(1, 1, 1, HEADERS.length).setFontWeight('bold').setBackground('#e8eefc');
+  // isi header jika sheet kosong, atau kolom baru (K-O) belum punya header
+  if (sh.getLastRow() === 0 || !sh.getRange(1, HEADERS.length).getValue()) {
+    sh.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS])
+      .setFontWeight('bold').setBackground('#e8eefc');
     sh.setFrozenRows(1);
   }
   return sh;
+}
+
+function saveFoto_(d, nama) {
+  if (!d.foto || !/^image\//.test(d.fotoType || '')) throw new Error('Foto perbaikan tidak valid.');
+  const bytes = Utilities.base64Decode(d.foto);
+  if (bytes.length > MAX_FOTO) throw new Error('Ukuran foto melebihi 2 MB.');
+
+  let folder;
+  if (FOLDER_ID) folder = DriveApp.getFolderById(FOLDER_ID);
+  else {
+    const it = DriveApp.getFoldersByName('Foto Redeem CRM');
+    folder = it.hasNext() ? it.next() : DriveApp.createFolder('Foto Redeem CRM');
+  }
+  const ext = d.fotoType.split('/')[1].replace('jpeg', 'jpg');
+  const fname = Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyyMMdd_HHmmss') +
+                '_' + nama.replace(/[^\w]+/g, '_') + '.' + ext;
+  const file = folder.createFile(Utilities.newBlob(bytes, d.fotoType, fname));
+  try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (e) {}
+  return file.getUrl();
 }
 
 function saveData(d) {
@@ -63,9 +90,15 @@ function saveData(d) {
     if (!nama || !npp || !twu) throw new Error('Nama, NPP, dan TWU wajib diisi.');
     if (!(region >= 1 && region <= 10)) throw new Error('Region harus 1 sampai 10.');
     if (KASET.indexOf(d.kaset) < 0) throw new Error('Jenis kaset tidak valid.');
+    if (KONDISI.indexOf(d.kondisi) < 0) throw new Error('Kondisi awal tidak valid.');
+    if (PART.indexOf(d.part) < 0) throw new Error('Part yang diganti tidak valid.');
+    if (HASIL.indexOf(d.checker) < 0) throw new Error('Pengujian checker tidak valid.');
+    if (HASIL.indexOf(d.mesin) < 0) throw new Error('Pengujian di mesin tidak valid.');
     if (STATUS.indexOf(d.status) < 0) throw new Error('Status tidak valid.');
     if (!d.tglPerbaikan || !d.tglSelesai) throw new Error('Tanggal wajib diisi.');
     if (d.tglSelesai < d.tglPerbaikan) throw new Error('Tanggal selesai tidak boleh sebelum tanggal perbaikan.');
+
+    const fotoUrl = saveFoto_(d, nama); // upload dulu; kalau gagal, data tidak tersimpan
 
     const point = d.status === 'OK' ? POINT_OK : 0;
     const sh = getSheet_();
@@ -76,7 +109,8 @@ function saveData(d) {
     sh.getRange(r, 7, 1, 2).setNumberFormat('@');
     sh.getRange(r, 1, 1, HEADERS.length).setValues([[
       new Date(), nama, npp, region, twu, d.kaset,
-      d.tglPerbaikan, d.tglSelesai, d.status, point
+      d.tglPerbaikan, d.tglSelesai, d.status, point,
+      d.kondisi, d.part, d.checker, d.mesin, fotoUrl
     ]]);
     CacheService.getScriptCache().remove('points'); // data baru -> cache dihapus
     return { ok: true, point: point };
@@ -88,7 +122,7 @@ function saveData(d) {
 function getPoints() {
   const cache = CacheService.getScriptCache();
   const hit = cache.get('points');
-  if (hit) return JSON.parse(hit);           // cepat: dari cache
+  if (hit) return JSON.parse(hit); // cepat: dari cache
 
   const sh = getSheet_();
   const last = sh.getLastRow();
@@ -104,4 +138,11 @@ function getPoints() {
   }
   try { cache.put('points', JSON.stringify(out), 300); } catch (e) {}
   return out;
+}
+
+// Jalankan SEKALI dari editor (pilih authDrive > Run) untuk memberi izin Drive penuh
+function authDrive() {
+  const f = DriveApp.createFile('tes-izin.txt', 'tes');
+  f.setTrashed(true);
+  DriveApp.getFolderById(FOLDER_ID); // cek akses ke folder tujuan
 }
