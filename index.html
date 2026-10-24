@@ -66,6 +66,22 @@
   input,select{width:100%;padding:12px 14px;border:1px solid #cfd9ee;border-radius:10px;font-size:15px;background:#fff;color:var(--ink);transition:.2s}
   input::placeholder{color:#9aa8c6}
   input:focus,select:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+  /* ===== form bersesi ===== */
+  .form-head{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+  .form-head .ic{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:22px;color:#fff;background:linear-gradient(135deg,var(--pri),var(--vi));box-shadow:0 8px 18px rgba(37,99,235,.3)}
+  .form-head h2{margin:0}
+  .form-head small{color:var(--mute);display:block;margin-top:2px}
+  .sect{background:rgba(255,255,255,.7);border:1px solid var(--line);border-radius:16px;padding:22px 22px 24px;margin-top:20px}
+  .sect-h{display:flex;align-items:center;gap:12px;padding-bottom:14px;margin-bottom:20px;border-bottom:1px dashed rgba(37,99,235,.25)}
+  .sect-h .no{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:17px;background:#eaf1ff;border:1px solid rgba(37,99,235,.25)}
+  .sect-h b{font-size:16px;display:block;color:var(--ink)}
+  .sect-h span{font-size:12.5px;color:var(--mute)}
+  .sect .grid{gap:20px 18px}
+  label i{font-style:normal;margin-right:7px;font-size:14px}
+  .hint{font-size:12px;color:var(--mute);margin-top:6px}
+  input[type=file]{padding:14px;border:2px dashed rgba(37,99,235,.35);background:rgba(234,241,255,.5);cursor:pointer}
+  input[type=file]::file-selector-button{margin-right:12px;padding:8px 14px;border:0;border-radius:8px;background:linear-gradient(135deg,var(--pri),var(--vi));color:#fff;font-weight:600;cursor:pointer}
+  .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}
   .view{display:none} .view.active{display:block;animation:fade .35s ease}
   @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
@@ -126,35 +142,58 @@
   <!-- FORM -->
   <section id="view-form" class="view">
     <div class="card">
-      <h2>Form Redeem Point</h2>
-      <div class="grid">
-        <div><label>Nama</label><input id="nama" placeholder="Nama lengkap"></div>
-        <div><label>NPP</label><input id="npp" placeholder="Nomor pegawai"></div>
-        <div><label>Region</label>
-          <select id="region"><option value="">-- Pilih --</option></select></div>
-        <div><label>TWU</label><input id="twu" placeholder="Kode / nama TWU"></div>
-        <div class="full"><label>Jenis Kaset</label>
-          <select id="kaset"><option value="">-- Pilih --</option></select></div>
-        <div class="full"><label>Kondisi Awal</label>
-          <select id="kondisi"><option value="">-- Pilih --</option></select></div>
-        <div class="full"><label>Part yang Diganti</label>
-          <select id="part"><option value="">-- Pilih --</option></select></div>
-        <div><label>Pengujian Checker</label>
-          <select id="checker"><option value="">-- Pilih --</option></select></div>
-        <div><label>Pengujian di Mesin</label>
-          <select id="mesin"><option value="">-- Pilih --</option></select></div>
-        <div class="full"><label>Upload Foto Perbaikan (maks 2 MB)</label>
-          <input type="file" id="foto" accept="image/*"></div>
-        <div><label>Tanggal Perbaikan</label><input type="date" id="tglPerbaikan"></div>
-        <div><label>Tanggal Selesai</label><input type="date" id="tglSelesai"></div>
-        <div class="full"><label>Status</label>
-          <select id="status"><option value="">-- Pilih --</option></select></div>
+      <div class="form-head"><div class="ic">📝</div><div><h2>Form Redeem Point</h2><small>Lengkapi 4 bagian di bawah, semua kolom wajib diisi.</small></div></div>
+
+      <div class="sect">
+        <div class="sect-h"><div class="no">👤</div><div><b>1. Data Teknisi</b><span>Identitas dan lokasi penugasan</span></div></div>
+        <div class="grid">
+          <div><label><i>🧑</i>Nama</label><input id="nama" placeholder="Nama lengkap"></div>
+          <div><label><i>🪪</i>NPP</label><input id="npp" placeholder="Nomor pegawai"></div>
+          <div><label><i>🗺️</i>Region</label>
+            <select id="region"><option value="">-- Pilih --</option></select></div>
+          <div><label><i>📍</i>TWU</label><input id="twu" placeholder="Kode / nama TWU"></div>
+        </div>
+      </div>
+
+      <div class="sect">
+        <div class="sect-h"><div class="no">🔧</div><div><b>2. Kaset &amp; Kondisi</b><span>Jenis kaset, kondisi awal, dan part yang diganti</span></div></div>
+        <div class="grid">
+          <div class="full"><label><i>💾</i>Jenis Kaset</label>
+            <select id="kaset"><option value="">-- Pilih --</option></select></div>
+          <div class="full"><label><i>⚠️</i>Kondisi Awal</label>
+            <select id="kondisi"><option value="">-- Pilih --</option></select></div>
+          <div class="full"><label><i>⚙️</i>Part yang Diganti</label>
+            <select id="part"><option value="">-- Pilih --</option></select></div>
+        </div>
+      </div>
+
+      <div class="sect">
+        <div class="sect-h"><div class="no">🧪</div><div><b>3. Pengujian &amp; Bukti</b><span>Hasil uji dan foto perbaikan</span></div></div>
+        <div class="grid">
+          <div><label><i>🔍</i>Pengujian Checker</label>
+            <select id="checker"><option value="">-- Pilih --</option></select></div>
+          <div><label><i>🏧</i>Pengujian di Mesin</label>
+            <select id="mesin"><option value="">-- Pilih --</option></select></div>
+          <div class="full"><label><i>📷</i>Upload Foto Perbaikan</label>
+            <input type="file" id="foto" accept="image/*">
+            <div class="hint">Format gambar (JPG/PNG), maksimal 2 MB.</div></div>
+        </div>
+      </div>
+
+      <div class="sect">
+        <div class="sect-h"><div class="no">📅</div><div><b>4. Waktu &amp; Status</b><span>Tanggal pengerjaan dan hasil akhir</span></div></div>
+        <div class="grid">
+          <div><label><i>🛠️</i>Tanggal Perbaikan</label><input type="date" id="tglPerbaikan"></div>
+          <div><label><i>🏁</i>Tanggal Selesai</label><input type="date" id="tglSelesai"></div>
+          <div class="full"><label><i>✅</i>Status</label>
+            <select id="status"><option value="">-- Pilih --</option></select></div>
+        </div>
       </div>
       <div id="msg" class="msg"></div>
-      <p style="margin-top:18px">
-        <button class="btn" id="btnSubmit" onclick="submitForm()">Kirim</button>
+      <div class="actions">
+        <button class="btn" id="btnSubmit" onclick="submitForm()">🚀 Kirim</button>
         <button class="btn sec" onclick="show('home')">Kembali</button>
-      </p>
+      </div>
     </div>
   </section>
 
@@ -189,7 +228,7 @@
 
 <script>
   // GANTI dengan URL Web App Anda (berakhiran /exec)
-  var URL_EXEC = 'https://script.google.com/macros/s/AKfycbwsLm-_Gn5lCqwDEd4u5GeIWZbYMG0tK99c39vuCjT08ub_VJgx2fuDf0r-9WzDRo4m/exec';
+  var URL_EXEC = 'https://script.google.com/macros/s/AKfycbwguC0O7ZhO8bQx9Wo_4H6Dx22BQa0DZYL1chwYSYhrQdmNwn_M8li6l1XcXk2Rt3oR/exec';
 
   var KASET = ['Hitachi SR7500','Hitachi VS 7500','RG-7','RG-8','Hyosung MX8600','Hyosung MX8600-S','DN'];
   var STATUS = ['OK','Pending Part','Unrepair'];
