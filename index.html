@@ -93,8 +93,6 @@
   @media(max-width:600px){.grid{grid-template-columns:1fr}.hero{padding:34px 22px}.hero h1{font-size:24px}}
   @media(prefers-reduced-motion:reduce){#bg-grid,#bg-scan,nav .brand::before{animation:none}}
 </style>
-
-
 </head>
 <body>
 <div id="bg-grid"></div><div id="bg-circuit"></div><div id="bg-scan"></div><canvas id="bg-net"></canvas>
@@ -137,6 +135,16 @@
         <div><label>TWU</label><input id="twu" placeholder="Kode / nama TWU"></div>
         <div class="full"><label>Jenis Kaset</label>
           <select id="kaset"><option value="">-- Pilih --</option></select></div>
+        <div class="full"><label>Kondisi Awal</label>
+          <select id="kondisi"><option value="">-- Pilih --</option></select></div>
+        <div class="full"><label>Part yang Diganti</label>
+          <select id="part"><option value="">-- Pilih --</option></select></div>
+        <div><label>Pengujian Checker</label>
+          <select id="checker"><option value="">-- Pilih --</option></select></div>
+        <div><label>Pengujian di Mesin</label>
+          <select id="mesin"><option value="">-- Pilih --</option></select></div>
+        <div class="full"><label>Upload Foto Perbaikan (maks 2 MB)</label>
+          <input type="file" id="foto" accept="image/*"></div>
         <div><label>Tanggal Perbaikan</label><input type="date" id="tglPerbaikan"></div>
         <div><label>Tanggal Selesai</label><input type="date" id="tglSelesai"></div>
         <div class="full"><label>Status</label>
@@ -185,6 +193,10 @@
 
   var KASET = ['Hitachi SR7500','Hitachi VS 7500','RG-7','RG-8','Hyosung MX8600','Hyosung MX8600-S','DN'];
   var STATUS = ['OK','Pending Part','Unrepair'];
+  var KONDISI = ['Indikasi human error','Part rusak','Mekanik problem','Lain-lain'];
+  var PART = ['Handle','Casing','Unit kunci','Spacer unit','Motor unit','Sensor','Belt','Board','Mekanik lainnya','Tidak ada part diganti'];
+  var HASIL = ['Berhasil','Belum berhasil'];
+  var MAX_FOTO = 2*1024*1024;
 
   function $(id){return document.getElementById(id);}
   function esc(s){var d=document.createElement('div');d.textContent=s==null?'':s;return d.innerHTML;}
@@ -193,6 +205,9 @@
     for(var i=1;i<=10;i++) $('region').add(new Option('Region '+i, i));
     KASET.forEach(function(k){$('kaset').add(new Option(k,k));});
     STATUS.forEach(function(s){$('status').add(new Option(s,s));});
+    KONDISI.forEach(function(k){$('kondisi').add(new Option(k,k));});
+    PART.forEach(function(k){$('part').add(new Option(k,k));});
+    HASIL.forEach(function(k){$('checker').add(new Option(k,k));$('mesin').add(new Option(k,k));});
   })();
 
   function show(v){
@@ -205,33 +220,53 @@
 
   function setMsg(t,type){var m=$('msg');m.textContent=t||'';m.className='msg'+(t?' '+type:'');}
 
+  function readFile(f){
+    return new Promise(function(res,rej){
+      var r=new FileReader();
+      r.onload=function(){res(r.result.split(',')[1]);};
+      r.onerror=function(){rej(new Error('Gagal membaca foto'));};
+      r.readAsDataURL(f);
+    });
+  }
+
   function submitForm(){
     var d={
       nama:$('nama').value.trim(), npp:$('npp').value.trim(), region:$('region').value,
-      twu:$('twu').value.trim(), kaset:$('kaset').value, tglPerbaikan:$('tglPerbaikan').value,
-      tglSelesai:$('tglSelesai').value, status:$('status').value
+      twu:$('twu').value.trim(), kaset:$('kaset').value,
+      kondisi:$('kondisi').value, part:$('part').value,
+      checker:$('checker').value, mesin:$('mesin').value,
+      tglPerbaikan:$('tglPerbaikan').value, tglSelesai:$('tglSelesai').value, status:$('status').value
     };
     for(var k in d){ if(!d[k]) return setMsg('Semua field wajib diisi.','err'); }
     if(d.tglSelesai < d.tglPerbaikan) return setMsg('Tanggal selesai tidak boleh sebelum tanggal perbaikan.','err');
 
+    var f=$('foto').files[0];
+    if(!f) return setMsg('Foto perbaikan wajib diupload.','err');
+    if(!/^image\//.test(f.type)) return setMsg('File harus berupa gambar.','err');
+    if(f.size>MAX_FOTO) return setMsg('Ukuran foto maksimal 2 MB (foto Anda '+(f.size/1048576).toFixed(2)+' MB).','err');
+
     if(URL_EXEC.indexOf('GANTI_DENGAN')>-1) return setMsg('URL_EXEC belum diisi di index.html.','err');
-    $('btnSubmit').disabled=true; setMsg('Menyimpan data...','info');
-    // text/plain = "simple request" -> tidak memicu preflight CORS
-    fetch(URL_EXEC,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(d)})
-      .then(function(r){return r.json();})
-      .then(function(res){
-        $('btnSubmit').disabled=false;
-        if(!res.ok) return setMsg(res.error||'Gagal menyimpan data.','err');
-        setMsg(''); resetForm(); try{localStorage.removeItem(CK);}catch(e){} fetchPoints().catch(function(){});
-        if(res.point>0){ $('modal').classList.add('show'); }
-        else { setMsg('Data tersimpan. Status bukan OK, sehingga belum mendapat point.','info'); }
-      })
-      .catch(function(e){ $('btnSubmit').disabled=false; setMsg('Gagal terhubung ke server: '+e.message,'err'); });
+    $('btnSubmit').disabled=true; setMsg('Mengupload foto & menyimpan data...','info');
+
+    readFile(f).then(function(b64){
+      d.foto=b64; d.fotoType=f.type;
+      // text/plain = "simple request" -> tidak memicu preflight CORS
+      return fetch(URL_EXEC,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(d)});
+    })
+    .then(function(r){return r.json();})
+    .then(function(res){
+      $('btnSubmit').disabled=false;
+      if(!res.ok) return setMsg(res.error||'Gagal menyimpan data.','err');
+      setMsg(''); resetForm(); try{localStorage.removeItem(CK);}catch(e){} fetchPoints().catch(function(){});
+      if(res.point>0){ $('modal').classList.add('show'); }
+      else { setMsg('Data tersimpan. Status bukan OK, sehingga belum mendapat point.','info'); }
+    })
+    .catch(function(e){ $('btnSubmit').disabled=false; setMsg('Gagal: '+e.message,'err'); });
   }
 
   function resetForm(){
-    ['nama','npp','twu','tglPerbaikan','tglSelesai'].forEach(function(i){$(i).value='';});
-    ['region','kaset','status'].forEach(function(i){$(i).value='';});
+    ['nama','npp','twu','tglPerbaikan','tglSelesai','foto'].forEach(function(i){$(i).value='';});
+    ['region','kaset','kondisi','part','checker','mesin','status'].forEach(function(i){$(i).value='';});
   }
 
   function closeModal(){ $('modal').classList.remove('show'); show('home'); }
@@ -268,7 +303,7 @@
   function loadPoints(){
     if(URL_EXEC.indexOf('GANTI_DENGAN')>-1){ $('tbody').innerHTML='<tr><td colspan="7">URL_EXEC belum diisi di index.html.</td></tr>'; return; }
     var cached=readCache();
-    if(cached){ renderPoints(cached); $('syncInfo').textContent='memperbarui...'; }   // tampil instan
+    if(cached){ renderPoints(cached); $('syncInfo').textContent='memperbarui...'; }
     else $('tbody').innerHTML='<tr><td colspan="7">Memuat...</td></tr>';
     fetchPoints()
       .then(function(rows){ renderPoints(rows); $('syncInfo').textContent='terbaru'; })
